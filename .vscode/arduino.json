@@ -1,0 +1,6 @@
+{
+    "programmer": "AVR ISP",
+    "board": "arduino:avr:uno",
+    "port": "/dev/cu.usbmodem14201",
+    "sketch": "examples/StructQueue/StructQueue.ino"
+}
