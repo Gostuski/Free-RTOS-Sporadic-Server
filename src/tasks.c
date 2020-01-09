@@ -902,6 +902,7 @@ static TickType_t serverPeriod = 0;
 
 struct parameters
 {
+    BaseType_t taskType;
     TickType_t arrival;
     TickType_t period;
     TickType_t duration;
@@ -1007,6 +1008,7 @@ void parseInput(char *input)
     char *token;
 
     token = strtok(input, " ");
+    
 
     if (strCmp(token, "delete"))
     {
@@ -1039,11 +1041,6 @@ void parseInput(char *input)
         token = strtok(NULL, " ");
         duration = atoi(token);
         xTaskCreatePeriodic(taskAperiodic, taskName, 60, taskName, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
-    }
-    else if (strCmp(token, "batch"))
-    {
-        token = strtok(NULL, " ");
-        print_string(token);
     }
     else if (strCmp(token, "server"))
     {
@@ -1094,6 +1091,55 @@ void parseInput(char *input)
         }
         
         for(i = 0; i < counter; i++){
+            print_string(taskParameters[i].taskName);
+            print_string(" - ");
+            print_number(taskParameters[i].arrival);
+            print_string(" - ");
+            print_number(taskParameters[i].period);
+            print_string(" - ");
+            print_number(taskParameters[i].duration);
+            print_string("\n");
+        }
+
+    }
+    else if (strCmp(token, "batch"))
+    { 
+        
+        char *k = strtok(NULL, " ");
+
+        char *temp = strtok(k, "-");
+
+        BaseType_t counter = 0;
+        BaseType_t i;
+
+        while(temp != NULL){
+            
+            if(strcmp(temp, "periodic") == 0){
+                taskParameters[counter].taskType = PERIODIC_TASK_PRIORITY;
+            }else{
+                taskParameters[counter].taskType = APERIODIC_TASK_PRIORITY;
+            }
+            temp = strtok(NULL, "-");
+            strcpy(taskParameters[counter].taskName, temp);
+            temp = strtok(NULL, "-");
+            TickType_t arrival = atoi(temp);
+            temp = strtok(NULL, "-");
+            TickType_t period = atoi(temp);
+            temp = strtok(NULL, "-");
+            TickType_t duration = atoi(temp);
+            temp = strtok(NULL, "-");
+
+            taskParameters[counter].arrival = arrival;
+            taskParameters[counter].period = period;
+            taskParameters[counter].duration = duration;
+
+            counter++;
+
+        }
+        
+        for(i = 0; i < counter; i++){
+            print_number(taskParameters[i].taskType);
+            print_string(" - ");
             print_string(taskParameters[i].taskName);
             print_string(" - ");
             print_number(taskParameters[i].arrival);
