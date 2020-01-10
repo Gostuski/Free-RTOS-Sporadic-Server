@@ -263,8 +263,6 @@ typedef struct TaskControlBlock_t
 
     TaskFunction_t taskCode;
 
-    int restart;
-
     int cycle;
 
     TickType_t period, duration, arrival;
@@ -517,7 +515,6 @@ BaseType_t xTaskCreatePeriodic(TaskFunction_t pxTaskCode,
         pxNewTCB->pvParameters = pvParameters;
         pxNewTCB->stackDepth = usStackDepth;
         pxNewTCB->taskCode = pxTaskCode;
-        pxNewTCB->restart = 0;
         pxNewTCB->pcName = pcName;
         prvAddNewTaskToReadyList(pxNewTCB);
         xReturn = pdPASS;
@@ -896,9 +893,8 @@ void vTaskDelete(TaskHandle_t xTaskToDelete)
 
 #define MAX_TASKS_INPUT 5
 
-static TickType_t serverCapacity = 0;
-static TickType_t serverPeriod = 0;
-
+static TickType_t serverCapacity = 5;
+static TickType_t serverPeriod = 10;
 
 struct parameters
 {
@@ -906,10 +902,10 @@ struct parameters
     TickType_t arrival;
     TickType_t period;
     TickType_t duration;
+    BaseType_t create;
     char taskName[MAX_TASK_NAME_LENGTH];
 
 } taskParameters[MAX_TASKS_INPUT];
-
 
 struct capacityRefill
 {
@@ -937,16 +933,19 @@ void initialiseServer(TickType_t capacity, TickType_t period)
     serverCapacity = capacity;
     serverPeriod = period;
 
+    print_string("Server capacity: ");
     print_number(serverCapacity);
-    print_string(" ->");
+    print_string("\n");
+    print_string("Server period: ");
     print_number(serverPeriod);
     print_string("\n");
+    return;
 }
 
 void setRefill(TickType_t refill)
 {
 
-    int i;
+    unsigned char i;
     for (i = 0; i < MAX_REFILLS; i++)
     {
         if (refills[i].refillAmount == 0)
@@ -971,6 +970,7 @@ void taskAperiodic()
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
+            serverCapacity -= 1;
         }
     }
 
@@ -1006,9 +1006,8 @@ void taskPeriodic()
 void parseInput(char *input)
 {
     char *token;
-
+    print_string("Parse\n");
     token = strtok(input, " ");
-    
 
     if (strCmp(token, "delete"))
     {
@@ -1021,11 +1020,12 @@ void parseInput(char *input)
         strcpy(taskName, strtok(NULL, " "));
         TickType_t period;
         TickType_t duration;
+        TickType_t arrival;
         token = strtok(NULL, " ");
         period = atoi(token);
         token = strtok(NULL, " ");
         duration = atoi(token);
-        xTaskCreatePeriodic(taskPeriodic, taskName, 120, taskName, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+        xTaskCreatePeriodic(taskPeriodic, taskName, 100, taskName, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
     }
     else if (strCmp(token, "aperiodic"))
     {
@@ -1035,12 +1035,12 @@ void parseInput(char *input)
         TickType_t period;
         TickType_t duration;
         token = strtok(NULL, " ");
-        arrival = atoi(token);
+        arrival = atoi(token) + xTaskGetTickCount();
         token = strtok(NULL, " ");
         period = atoi(token);
         token = strtok(NULL, " ");
         duration = atoi(token);
-        xTaskCreatePeriodic(taskAperiodic, taskName, 60, taskName, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
+        xTaskCreatePeriodic(taskAperiodic, taskName, 120, taskName, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
     }
     else if (strCmp(token, "server"))
     {
@@ -1051,11 +1051,10 @@ void parseInput(char *input)
         TickType_t period = atoi(token);
 
         initialiseServer(capacity, period);
-
     }
     else if (strCmp(token, "capacity"))
-    { 
-        
+    {
+
         char *k = strtok(NULL, " ");
 
         char *temp = strtok(k, "-");
@@ -1063,11 +1062,9 @@ void parseInput(char *input)
         BaseType_t counter = 0;
         BaseType_t i;
 
-        while(temp != NULL){
-            
+        while (temp != NULL)
+        {
 
-            strcpy(taskParameters[counter].taskName, temp);
-            temp = strtok(NULL, "-");
             TickType_t arrival = atoi(temp);
             temp = strtok(NULL, "-");
             TickType_t period = atoi(temp);
@@ -1080,49 +1077,50 @@ void parseInput(char *input)
             taskParameters[counter].duration = duration;
 
             counter++;
-
-            // print_number(arrival);
-            // print_string(" - ");
-            // print_number(period);
-            // print_string(" - ");
-            // print_number(duration);
-            // print_string("\n");
-
         }
-        
-        for(i = 0; i < counter; i++){
-            print_string(taskParameters[i].taskName);
-            print_string(" - ");
+
+        for (i = 0; i < counter; i++)
+        {
             print_number(taskParameters[i].arrival);
             print_string(" - ");
             print_number(taskParameters[i].period);
             print_string(" - ");
             print_number(taskParameters[i].duration);
             print_string("\n");
-        }
 
+            //Remove from list;
+            taskParameters[i].duration = 0;
+        }
     }
     else if (strCmp(token, "batch"))
-    { 
-        
+    {
         char *k = strtok(NULL, " ");
 
         char *temp = strtok(k, "-");
 
+        double sum = 0;
+
         BaseType_t counter = 0;
         BaseType_t i;
 
-        while(temp != NULL){
-            
-            if(strcmp(temp, "periodic") == 0){
+        while (temp != NULL)
+        {
+            if (counter == MAX_TASKS_INPUT)
+                break;
+
+            if (strcmp(temp, "periodic") == 0)
+            {
                 taskParameters[counter].taskType = PERIODIC_TASK_PRIORITY;
-            }else{
+            }
+            else
+            {
                 taskParameters[counter].taskType = APERIODIC_TASK_PRIORITY;
             }
+
             temp = strtok(NULL, "-");
             strcpy(taskParameters[counter].taskName, temp);
             temp = strtok(NULL, "-");
-            TickType_t arrival = atoi(temp);
+            TickType_t arrival = atoi(temp) + xTaskGetTickCount();
             temp = strtok(NULL, "-");
             TickType_t period = atoi(temp);
             temp = strtok(NULL, "-");
@@ -1132,12 +1130,37 @@ void parseInput(char *input)
             taskParameters[counter].arrival = arrival;
             taskParameters[counter].period = period;
             taskParameters[counter].duration = duration;
+            taskParameters[counter].create = 1;
+            
+            if(taskParameters[i].taskType == PERIODIC_TASK_PRIORITY){
+                sum += taskParameters[i].duration / (double)taskParameters[i].period;
+            }
 
             counter++;
-
         }
-        
-        for(i = 0; i < counter; i++){
+
+        double x = counter * (pow(2, 1 / (double)counter) - 1);
+
+        if (sum > x)
+        {
+            print_string("Batch is not schedulable\n");
+
+            for (i = 0; i < counter; i++)
+            {
+                taskParameters[i].duration = 0;
+                taskParameters[i].create = 0;
+            }
+
+            return;
+        }
+
+        for (i = 0; i < counter; i++)
+        {
+
+            if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
+            {
+                // xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 100, taskParameters[i].taskName, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+            }
             print_number(taskParameters[i].taskType);
             print_string(" - ");
             print_string(taskParameters[i].taskName);
@@ -1149,9 +1172,7 @@ void parseInput(char *input)
             print_number(taskParameters[i].duration);
             print_string("\n");
         }
-
     }
-    return;
 }
 
 #if (INCLUDE_vTaskDelayUntil == 1)
@@ -2238,22 +2259,37 @@ BaseType_t xTaskIncrementTick(void)
     }
 #endif /* configUSE_PREEMPTION */
 
-    //REFILL
-    int i;
+    //REFILL FUNC
+    unsigned char i;
 
     for (i = 0; i < MAX_REFILLS; i++)
     {
         if (refills[i].refillTick == xTaskGetTickCount())
         {
             serverCapacity += refills[i].refillAmount;
-            refills[i].refillAmount = 0;
-            print_number(serverCapacity);
-            print_string(" - refilled ");
+            print_number(refills[i].refillAmount);
+            print_string(" refilled at : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
+            refills[i].refillAmount = 0;
         }
     }
-    // return xSwitchRequired;
+    // print_string("pre for\n");
+
+    for (i = 0; i < MAX_TASKS_INPUT; i++)
+    {
+        if (taskParameters[i].taskType == APERIODIC_TASK_PRIORITY && taskParameters[i].arrival <= xTaskGetTickCount() && taskParameters[i].duration > 0 && taskParameters[i].create == 1)
+        {
+            print_number(xTaskGetTickCount());
+            print_string(" - create ");
+            print_string(taskParameters[i].taskName);
+            print_string("\n");
+            taskParameters[i].create = 0;
+            // xTaskCreatePeriodic(taskAperiodic, "aper", 120, "aper", APERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, 0, taskParameters[i].duration);
+            taskParameters[i].duration = 0;
+        }
+    }
+
     return pdTRUE;
 }
 
@@ -2346,15 +2382,14 @@ void vTaskSwitchContext(void)
 
         TCB_t *aperiodicTask = listGET_LIST_ITEM_OWNER(aperiodic);
 
-        if (serverPeriod < min_period && aperiodicTask->arrival <= xTaskGetTickCount() && serverCapacity > 0)
+        if (aperiodicTask != NULL && serverPeriod < min_period && aperiodicTask->arrival <= xTaskGetTickCount() && serverCapacity > 0 && aperiodic_list->uxNumberOfItems > 0)
         {
-                if (aperiodicTask->cycle == 0)
-                {
-                    aperiodicTask->cycle = 1;
-                    setRefill(aperiodicTask->duration);
-                }
-                min_task = aperiodicTask;
-                serverCapacity -= 1;
+            if (aperiodicTask->cycle == 0)
+            {
+                aperiodicTask->cycle = 1;
+                setRefill(aperiodicTask->duration);
+            }
+            min_task = aperiodicTask;
         }
 
         pxCurrentTCB = min_task;
@@ -2362,6 +2397,7 @@ void vTaskSwitchContext(void)
         if (restartTask != NULL)
         {
             restartTask->pxTopOfStack = pxPortInitialiseStack(&(restartTask->pxStack[restartTask->stackDepth - (configSTACK_DEPTH_TYPE)1]), restartTask->taskCode, restartTask->pvParameters);
+
             restartTask = NULL;
         }
 
