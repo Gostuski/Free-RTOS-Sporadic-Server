@@ -185,6 +185,19 @@ configIDLE_TASK_NAME in FreeRTOSConfig.h. */
 
 #endif /* configUSE_PORT_OPTIMISED_TASK_SELECTION */
 
+void (*print_string)(char *);
+void (*print_number)(int);
+
+void set_print_str(void (*print_str)(char *))
+{
+    print_string = print_str;
+}
+
+void set_print_num(void (*print_num)(int))
+{
+    print_number = print_num;
+}
+
 /*-----------------------------------------------------------*/
 
 /* pxDelayedTaskList and pxOverflowDelayedTaskList are switched when the tick
@@ -744,7 +757,7 @@ static void prvAddNewTaskToReadyList(TCB_t *pxNewTCB)
             {
                 if (pxCurrentTCB->uxPriority <= pxNewTCB->uxPriority)
                 {
-                    pxCurrentTCB = pxNewTCB;
+                    // pxCurrentTCB = pxNewTCB;
                 }
                 else
                 {
@@ -914,19 +927,6 @@ struct capacityRefill
 
 } refills[MAX_REFILLS];
 
-void (*print_string)(char *);
-void (*print_number)(int);
-
-void set_print_str(void (*print_str)(char *))
-{
-    print_string = print_str;
-}
-
-void set_print_num(void (*print_num)(int))
-{
-    print_number = print_num;
-}
-
 void initialiseServer(TickType_t capacity, TickType_t period)
 {
 
@@ -956,8 +956,10 @@ void setRefill(TickType_t refill)
         }
     }
 }
-void taskAperiodic()
+void taskAperiodicNumber(void *parameter)
 {
+    char *output = (char*)parameter;
+
     TickType_t counter = 0;
     TickType_t temp = xTaskGetTickCount() - 1;
 
@@ -966,7 +968,7 @@ void taskAperiodic()
         if (temp != xTaskGetTickCount())
         {
             counter++;
-            print_string(pxCurrentTCB->pcName);
+            print_string(output);
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -980,8 +982,10 @@ void taskAperiodic()
 
     vTaskDelete(NULL);
 }
-void taskPeriodic()
+void taskAperiodic(void *parameter)
 {
+    char *output = (char*)parameter;
+
     TickType_t counter = 0;
     TickType_t temp = xTaskGetTickCount() - 1;
 
@@ -990,7 +994,59 @@ void taskPeriodic()
         if (temp != xTaskGetTickCount())
         {
             counter++;
-            print_string(pxCurrentTCB->pcName);
+            print_string(output);
+            print_number(xTaskGetTickCount());
+            print_string("\n");
+            temp = xTaskGetTickCount();
+            serverCapacity -= 1;
+        }
+    }
+
+    while (temp == xTaskGetTickCount())
+    {
+    }
+
+    vTaskDelete(NULL);
+}
+void taskPeriodicNumber(void *parameter)
+{
+    char *output = (char*)parameter;
+
+    TickType_t counter = 0;
+    TickType_t temp = xTaskGetTickCount() - 1;
+
+    while (counter < pxCurrentTCB->duration)
+    {
+        if (temp != xTaskGetTickCount())
+        {
+            counter++;
+            print_string(output);
+            print_number(xTaskGetTickCount());
+            print_string("\n");
+            temp = xTaskGetTickCount();
+        }
+    }
+
+    while (temp == xTaskGetTickCount())
+    {
+    }
+
+    vTaskDeleteLogical();
+}
+void taskPeriodic(void *parameter)
+{
+    char *output = (char*)parameter;
+
+    TickType_t counter = 0;
+    TickType_t temp = xTaskGetTickCount() - 1;
+
+    while (counter < pxCurrentTCB->duration)
+    {
+        if (temp != xTaskGetTickCount())
+        {
+            counter++;
+            // print_string(pxCurrentTCB->pcName);
+            print_string(output);
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1006,7 +1062,7 @@ void taskPeriodic()
 void parseInput(char *input)
 {
     char *token;
-    print_string("Parse\n");
+    // print_string("Parse\n");
     token = strtok(input, " ");
 
     if (strCmp(token, "delete"))
@@ -1020,27 +1076,49 @@ void parseInput(char *input)
         strcpy(taskName, strtok(NULL, " "));
         TickType_t period;
         TickType_t duration;
-        TickType_t arrival;
+        char *taskFunction;
+        taskFunction = strtok(NULL, " ");
+        char *taskParam = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
+        strcpy(taskParam, strtok(NULL, " "));
         token = strtok(NULL, " ");
         period = atoi(token);
         token = strtok(NULL, " ");
         duration = atoi(token);
-        xTaskCreatePeriodic(taskPeriodic, taskName, 100, taskName, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+
+        // print_string(period);
+        // print_string(duration);
+
+        if(strcmp(taskFunction, "word")){
+            xTaskCreatePeriodic(taskPeriodic, taskName, 120, taskParam, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+        }else{
+            xTaskCreatePeriodic(taskPeriodicNumber, taskName, 120, taskParam, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+        }
+
+        // xTaskCreatePeriodic(taskPeriodic, taskName, 100, taskName, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
     }
     else if (strCmp(token, "aperiodic"))
     {
         char *taskName = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
         strcpy(taskName, strtok(NULL, " "));
+        char *taskFunction;
+        taskFunction = strtok(NULL, " ");
         TickType_t arrival;
         TickType_t period;
         TickType_t duration;
+        char *taskParam = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
+        strcpy(taskParam, strtok(NULL, " "));
         token = strtok(NULL, " ");
         arrival = atoi(token) + xTaskGetTickCount();
         token = strtok(NULL, " ");
         period = atoi(token);
         token = strtok(NULL, " ");
         duration = atoi(token);
-        xTaskCreatePeriodic(taskAperiodic, taskName, 120, taskName, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
+
+        if(strcmp(taskFunction, "word")){
+            xTaskCreatePeriodic(taskAperiodic, taskName, 120, taskParam, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
+        }else{
+            xTaskCreatePeriodic(taskAperiodicNumber, taskName, 120, taskParam, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
+        }
     }
     else if (strCmp(token, "server"))
     {
@@ -1131,8 +1209,9 @@ void parseInput(char *input)
             taskParameters[counter].period = period;
             taskParameters[counter].duration = duration;
             taskParameters[counter].create = 1;
-            
-            if(taskParameters[i].taskType == PERIODIC_TASK_PRIORITY){
+
+            if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
+            {
                 sum += taskParameters[i].duration / (double)taskParameters[i].period;
             }
 
@@ -1143,7 +1222,7 @@ void parseInput(char *input)
 
         if (sum > x)
         {
-            print_string("Batch is not schedulable\n");
+            print_string("Batch is not schedulable");
 
             for (i = 0; i < counter; i++)
             {
@@ -1159,18 +1238,18 @@ void parseInput(char *input)
 
             if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
             {
-                // xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 100, taskParameters[i].taskName, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 100, taskParameters[i].taskName, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
             }
-            print_number(taskParameters[i].taskType);
-            print_string(" - ");
-            print_string(taskParameters[i].taskName);
-            print_string(" - ");
-            print_number(taskParameters[i].arrival);
-            print_string(" - ");
-            print_number(taskParameters[i].period);
-            print_string(" - ");
-            print_number(taskParameters[i].duration);
-            print_string("\n");
+            // print_number(taskParameters[i].taskType);
+            // print_string(" - ");
+            // print_string(taskParameters[i].taskName);
+            // print_string(" - ");
+            // print_number(taskParameters[i].arrival);
+            // print_string(" - ");
+            // print_number(taskParameters[i].period);
+            // print_string(" - ");
+            // print_number(taskParameters[i].duration);
+            // print_string("\n");
         }
     }
 }
@@ -2274,7 +2353,6 @@ BaseType_t xTaskIncrementTick(void)
             refills[i].refillAmount = 0;
         }
     }
-    // print_string("pre for\n");
 
     for (i = 0; i < MAX_TASKS_INPUT; i++)
     {
@@ -2285,8 +2363,8 @@ BaseType_t xTaskIncrementTick(void)
             print_string(taskParameters[i].taskName);
             print_string("\n");
             taskParameters[i].create = 0;
-            // xTaskCreatePeriodic(taskAperiodic, "aper", 120, "aper", APERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, 0, taskParameters[i].duration);
             taskParameters[i].duration = 0;
+            // xTaskCreatePeriodic(taskAperiodic, taskParameters[i].taskName, 100, "aper", APERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, 0, taskParameters[i].duration);
         }
     }
 
@@ -2311,10 +2389,6 @@ void deleteTask(char *taskName)
 
     struct xLIST_ITEM *tmp = listGET_HEAD_ENTRY(periodic_list);
 
-    // print_number(periodic_list->uxNumberOfItems);
-    // print_string(taskName);
-    // print_string("\n");
-
     while (1)
     {
         if (tmp == listGET_END_MARKER(periodic_list))
@@ -2322,21 +2396,18 @@ void deleteTask(char *taskName)
 
         TCB_t *task = listGET_LIST_ITEM_OWNER(tmp);
 
-        // print_string(task->pcName);
-        // print_string("\n");
-
-        // if (strCmp(task->pcName, taskName))
         if (strcmp(task->pcName, taskName) == 0)
         {
-            print_string(task->pcName);
-            print_string(" found\n");
             vPortFree(task->pcName);
             vTaskDelete(task);
-            // break;
+            print_string(task->pcName);
+            print_string(" - Deleted\n");
+            break;
         }
         tmp = listGET_NEXT(tmp);
     }
 }
+unsigned char kara = 0;
 
 void vTaskSwitchContext(void)
 {
