@@ -974,6 +974,7 @@ void taskAperiodicNumber(void *parameter)
         {
             counter++;
             print_string(output);
+            print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1000,6 +1001,7 @@ void taskAperiodic(void *parameter)
         {
             counter++;
             print_string(output);
+            print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1026,6 +1028,7 @@ void taskPeriodicNumber(void *parameter)
         {
             counter++;
             print_string(output);
+            print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1051,6 +1054,7 @@ void taskPeriodic(void *parameter)
         {
             counter++;
             print_string(output);
+            print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1164,7 +1168,6 @@ void parseInput(char *input)
 
             counter++;
         }
-
     }
     else if (strCmp(token, "batch"))
     {
@@ -1190,7 +1193,7 @@ void parseInput(char *input)
             {
                 taskParameters[counter].taskType = APERIODIC_TASK_PRIORITY;
             }
- 
+
             temp = strtok(NULL, "-");
             strcpy(taskParameters[counter].taskName, temp);
             char *taskFunction;
@@ -1210,9 +1213,12 @@ void parseInput(char *input)
             taskParameters[counter].duration = duration;
             taskParameters[counter].create = 1;
 
-            if(strcmp(taskFunction, "word") == 0){
+            if (strcmp(taskFunction, "word") == 0)
+            {
                 taskParameters[counter].taskFunction = WORD_FUNCTION;
-            }else{
+            }
+            else
+            {
                 taskParameters[counter].taskFunction = NUMBER_FUNCTION;
             }
 
@@ -1244,9 +1250,12 @@ void parseInput(char *input)
             if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
             {
                 print_string("asdasd\n");
-                if(taskParameters[i].taskFunction == WORD_FUNCTION){
+                if (taskParameters[i].taskFunction == WORD_FUNCTION)
+                {
                     xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 130, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
-                }else{
+                }
+                else
+                {
                     xTaskCreatePeriodic(taskPeriodicNumber, taskParameters[i].taskName, 130, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
                 }
                 taskParameters[i].create = 0;
@@ -2409,7 +2418,6 @@ void deleteTask(char *taskName)
         tmp = listGET_NEXT(tmp);
     }
 }
-unsigned char kara = 0;
 
 void vTaskSwitchContext(void)
 {
