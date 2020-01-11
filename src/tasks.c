@@ -909,8 +909,8 @@ void vTaskDelete(TaskHandle_t xTaskToDelete)
 #define WORD_FUNCTION 0
 #define NUMBER_FUNCTION 1
 
-static TickType_t serverCapacity = 5;
-static TickType_t serverPeriod = 10;
+static TickType_t serverCapacity = 0;
+static TickType_t serverPeriod = 0;
 
 struct parameters
 {
@@ -924,6 +924,8 @@ struct parameters
     char taskName[MAX_TASK_NAME_LENGTH];
 
 } taskParameters[MAX_TASKS_INPUT];
+
+
 
 struct capacityRefill
 {
@@ -1075,6 +1077,7 @@ void parseInput(char *input)
 
     if (strCmp(token, "delete"))
     {
+        print_string("delete\n");
         token = strtok(NULL, " ");
         deleteTask(token);
     }
@@ -1182,6 +1185,7 @@ void parseInput(char *input)
 
         while (temp != NULL)
         {
+
             if (counter == MAX_TASKS_INPUT)
                 break;
 
@@ -1229,6 +1233,17 @@ void parseInput(char *input)
 
             counter++;
         }
+            // for (i = 0; i < counter; i++)
+            // {
+            //     print_string(taskParameters[i].taskName);
+            //     print_string("-");
+            //     print_string(taskParameters[i].taskParam);
+            //     print_string("-");
+            //     print_number(taskParameters[i].period);
+            //     print_string("-");
+            //     print_number(taskParameters[i].duration);
+            //     print_string("\n");
+            // }
 
         double x = counter * (pow(2, 1 / (double)counter) - 1);
 
@@ -1249,14 +1264,19 @@ void parseInput(char *input)
 
             if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
             {
-                print_string("asdasd\n");
                 if (taskParameters[i].taskFunction == WORD_FUNCTION)
                 {
-                    xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 130, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                    print_string(taskParameters[i].taskName);
+                    print_string(taskParameters[i].taskParam);
+                    xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 150, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                    print_string("cw");
                 }
                 else
                 {
-                    xTaskCreatePeriodic(taskPeriodicNumber, taskParameters[i].taskName, 130, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                    print_string(taskParameters[i].taskName);
+                    print_string(taskParameters[i].taskParam);
+                    xTaskCreatePeriodic(taskPeriodicNumber, taskParameters[i].taskName, 150, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                    print_string("cn");
                 }
                 taskParameters[i].create = 0;
                 taskParameters[i].duration = 0;
@@ -2441,7 +2461,6 @@ void vTaskSwitchContext(void)
         TickType_t min_period = INT16_MAX;
 
         TCB_t *min_task = xIdleTaskHandle;
-
         while (1)
         {
             if (tmp == listGET_END_MARKER(periodic_list))
@@ -2451,6 +2470,7 @@ void vTaskSwitchContext(void)
 
             if (task->period <= min_period && task->arrival + task->cycle * task->period <= xTaskGetTickCount())
             {
+                print_string("switch\n");
                 min_task = task;
                 min_period = task->period;
             }
