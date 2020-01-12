@@ -325,8 +325,6 @@ is used in assert() statements. */
  * \defgroup xTaskCreate xTaskCreate
  * \ingroup Tasks
  */
-
-//MYFUNC
 #if (configSUPPORT_DYNAMIC_ALLOCATION == 1)
   BaseType_t xTaskCreate(TaskFunction_t pxTaskCode,
                          const char *const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
@@ -334,26 +332,6 @@ is used in assert() statements. */
                          void *const pvParameters,
                          UBaseType_t uxPriority,
                          TaskHandle_t *const pxCreatedTask) PRIVILEGED_FUNCTION;
-
-  BaseType_t xTaskCreatePeriodic(TaskFunction_t pxTaskCode,
-                                 const char *const pcName,
-                                 const configSTACK_DEPTH_TYPE usStackDepth,
-                                 void *const pvParameters,
-                                 UBaseType_t uxPriority,
-                                 TaskHandle_t *const pxCreatedTask, TickType_t arrival, TickType_t period, TickType_t duration) PRIVILEGED_FUNCTION;
-
-  void vTaskDeleteLogical();
-
-  void initialiseServer(TickType_t capacity, TickType_t period);
-
-  void setRefill(TickType_t refill);
-
-  void parseInput(char *input);
-
-  void set_print_str(void(*print_str)(char*));
-  void set_print_num(void(*print_num)(int));
-
-
 #endif
 
 /**
@@ -464,14 +442,34 @@ is used in assert() statements. */
  * \ingroup Tasks
  */
 #if (configSUPPORT_STATIC_ALLOCATION == 1)
-      TaskHandle_t xTaskCreateStatic(TaskFunction_t pxTaskCode,
-                                     const char *const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-                                     const configSTACK_DEPTH_TYPE ulStackDepth,
-                                     void *const pvParameters,
-                                     UBaseType_t uxPriority,
-                                     StackType_t *const puxStackBuffer,
-                                     StaticTask_t *const pxTaskBuffer) PRIVILEGED_FUNCTION;
+  TaskHandle_t xTaskCreateStatic(TaskFunction_t pxTaskCode,
+                                 const char *const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                 const configSTACK_DEPTH_TYPE ulStackDepth,
+                                 void *const pvParameters,
+                                 UBaseType_t uxPriority,
+                                 StackType_t *const puxStackBuffer,
+                                 StaticTask_t *const pxTaskBuffer) PRIVILEGED_FUNCTION;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
+
+  BaseType_t xTaskCreatePeriodic(TaskFunction_t pxTaskCode,
+                                 const char *const pcName,
+                                 const configSTACK_DEPTH_TYPE usStackDepth,
+                                 void *const pvParameters,
+                                 UBaseType_t uxPriority,
+                                 TaskHandle_t *const pxCreatedTask, TickType_t arrival, TickType_t period, TickType_t duration) PRIVILEGED_FUNCTION;
+
+  void taskPeriodic(void *parameter);
+  void vTaskDeleteLogical();
+
+  void initialiseServer(TickType_t capacity, TickType_t period);
+
+  void setRefill(TickType_t refill);
+
+  void parseInput(char *input);
+
+  void set_print_str(void (*print_str)(char *));
+  void set_print_num(void (*print_num)(int));
+  void set_print_float(void (*print_fl)(float));
 
 /**
  * task. h

@@ -101,8 +101,6 @@ to exclude the API function. */
 #define configMAX(a,b)  ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 #define configMIN(a,b)  ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
 
-#define configTOTAL_HEAP_SIZE      1200
-
-
+#define configTOTAL_HEAP_SIZE      1320
 
 #endif /* FREERTOS_CONFIG_H */
