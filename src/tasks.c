@@ -909,8 +909,8 @@ void vTaskDelete(TaskHandle_t xTaskToDelete)
 #define WORD_FUNCTION 0
 #define NUMBER_FUNCTION 1
 
-static TickType_t serverCapacity = 0;
-static TickType_t serverPeriod = 0;
+static TickType_t serverCapacity = 5;
+static TickType_t serverPeriod = 10;
 
 struct parameters
 {
@@ -974,7 +974,7 @@ void taskAperiodicNumber(void *parameter)
         {
             counter++;
             print_string(output);
-            print_string(" - tick : ");
+            // print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1001,7 +1001,7 @@ void taskAperiodic(void *parameter)
         {
             counter++;
             print_string(output);
-            print_string(" - tick : ");
+            // print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1028,7 +1028,7 @@ void taskPeriodicNumber(void *parameter)
         {
             counter++;
             print_string(output);
-            print_string(" - tick : ");
+            // print_string(" - tick : ");
             print_number(xTaskGetTickCount());
             print_string("\n");
             temp = xTaskGetTickCount();
@@ -1054,7 +1054,7 @@ void taskPeriodic(void *parameter)
         {
             counter++;
             print_string(output);
-            print_string(" - tick : ");
+            // print_string(" - tick : ");
             print_number(xTickCount);
             print_string("\n");
             temp = xTickCount;
@@ -1075,7 +1075,7 @@ void parseInput(char *input)
 
     if (strCmp(token, "delete"))
     {
-        print_string("delete\n");
+        // print_string("delete\n");
         token = strtok(NULL, " ");
         deleteTask(token);
     }
@@ -1088,10 +1088,8 @@ void parseInput(char *input)
         TickType_t arrival;
         char *taskFunction;
         taskFunction = strtok(NULL, " ");
-        // char *taskParam = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
-        // char *taskParam;
-        // strcpy(taskParam, strtok(NULL, " "));
-        strtok(NULL, " ");
+        char *taskParam = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
+        strcpy(taskParam, strtok(NULL, " "));
         token = strtok(NULL, " ");
         arrival = atoi(token) + xTaskGetTickCount();
         token = strtok(NULL, " ");
@@ -1099,20 +1097,22 @@ void parseInput(char *input)
         token = strtok(NULL, " ");
         duration = atoi(token);
 
-        print_string(taskName);
-        print_string(taskFunction);
-        // print_string(taskParam);
-        print_number(arrival);
-        print_number(period);
-        print_number(duration);
+        // print_string(taskName);
+        // print_string(taskFunction);
+        // print_number(arrival);
+        // print_number(period);
+        // print_number(duration);
 
         if (strcmp(taskFunction, "word") == 0)
         {
-            xTaskCreatePeriodic(taskPeriodic, taskName, 130, "taskParam", PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+            xTaskCreatePeriodic(taskPeriodic, taskName, 120, taskParam, PERIODIC_TASK_PRIORITY, NULL, xTickCount, period, duration);
+
+            // xTaskCreatePeriodic(taskPeriodic, taskName, 100, taskParam, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+            print_string("done");
         }
         else
         {
-            xTaskCreatePeriodic(taskPeriodicNumber, taskName, 130, "taskParam", PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
+            xTaskCreatePeriodic(taskPeriodicNumber, taskName, 130, taskParam, PERIODIC_TASK_PRIORITY, NULL, xTaskGetTickCount(), period, duration);
         }
     }
     else if (strCmp(token, "aperiodic"))
@@ -1135,11 +1135,11 @@ void parseInput(char *input)
 
         if (strcmp(taskFunction, "word"))
         {
-            xTaskCreatePeriodic(taskAperiodic, taskName, 120, taskParam, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
+            xTaskCreatePeriodic(taskAperiodic, taskName, 130, taskParam, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
         }
         else
         {
-            xTaskCreatePeriodic(taskAperiodicNumber, taskName, 120, taskParam, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
+            xTaskCreatePeriodic(taskAperiodicNumber, taskName, 130, taskParam, APERIODIC_TASK_PRIORITY, NULL, arrival, period, duration);
         }
     }
     else if (strCmp(token, "server"))
@@ -1188,115 +1188,122 @@ void parseInput(char *input)
         print_string("Capacity : ");
         print_number(result);
     }
-    // else if (strCmp(token, "batch"))
-    // {
-    //     char *k = strtok(NULL, " ");
+    else if (strCmp(token, "batch"))
+    {
+        char *k = strtok(NULL, " ");
 
-    //     char *temp = strtok(k, "-");
+        char *temp = strtok(k, "-");
 
-    //     double sum = 0;
+        double sum = 0;
 
-    //     BaseType_t counter = 0;
-    //     BaseType_t i;
+        BaseType_t counter = 0;
+        BaseType_t i;
 
-    //     while (temp != NULL)
-    //     {
+        while (temp != NULL)
+        {
 
-    //         if (counter == MAX_TASKS_INPUT)
-    //             break;
+            if (counter == MAX_TASKS_INPUT)
+                break;
 
-    //         if (strcmp(temp, "periodic") == 0)
-    //         {
-    //             taskParameters[counter].taskType = PERIODIC_TASK_PRIORITY;
-    //         }
-    //         else
-    //         {
-    //             taskParameters[counter].taskType = APERIODIC_TASK_PRIORITY;
-    //         }
+            if (strcmp(temp, "periodic") == 0)
+            {
+                taskParameters[counter].taskType = PERIODIC_TASK_PRIORITY;
+            }
+            else
+            {
+                taskParameters[counter].taskType = APERIODIC_TASK_PRIORITY;
+            }
 
-    //         temp = strtok(NULL, "-");
-    //         strcpy(taskParameters[counter].taskName, temp);
-    //         char *taskFunction;
-    //         taskFunction = strtok(NULL, "-");
-    //         char *taskParam = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
-    //         strcpy(taskParam, strtok(NULL, "-"));
-    //         temp = strtok(NULL, "-");
-    //         TickType_t arrival = atoi(temp) + xTaskGetTickCount();
-    //         temp = strtok(NULL, "-");
-    //         TickType_t period = atoi(temp);
-    //         temp = strtok(NULL, "-");
-    //         TickType_t duration = atoi(temp);
-    //         temp = strtok(NULL, "-");
-    //         taskParameters[counter].taskParam = taskParam;
-    //         taskParameters[counter].arrival = arrival;
-    //         taskParameters[counter].period = period;
-    //         taskParameters[counter].duration = duration;
-    //         taskParameters[counter].create = 1;
+            temp = strtok(NULL, "-");
+            strcpy(taskParameters[counter].taskName, temp);
+            char *taskFunction;
+            taskFunction = strtok(NULL, "-");
+            char *taskParam = pvPortMalloc(MAX_TASK_NAME_LENGTH * sizeof(char));
+            strcpy(taskParam, strtok(NULL, "-"));
+            temp = strtok(NULL, "-");
+            TickType_t arrival = atoi(temp) + xTaskGetTickCount();
+            temp = strtok(NULL, "-");
+            TickType_t period = atoi(temp);
+            temp = strtok(NULL, "-");
+            TickType_t duration = atoi(temp);
+            temp = strtok(NULL, "-");
+            taskParameters[counter].taskParam = taskParam;
+            taskParameters[counter].arrival = arrival;
+            taskParameters[counter].period = period;
+            taskParameters[counter].duration = duration;
+            taskParameters[counter].create = 1;
 
-    //         if (strcmp(taskFunction, "word") == 0)
-    //         {
-    //             taskParameters[counter].taskFunction = WORD_FUNCTION;
-    //         }
-    //         else
-    //         {
-    //             taskParameters[counter].taskFunction = NUMBER_FUNCTION;
-    //         }
+                    
+            if (strcmp(taskFunction, "word") == 0)
+            {
+                taskParameters[counter].taskFunction = WORD_FUNCTION;
+            }
+            else
+            {
+                taskParameters[counter].taskFunction = NUMBER_FUNCTION;
+            }
 
-    //         if (taskParameters[counter].taskType == PERIODIC_TASK_PRIORITY)
-    //         {
-    //             sum += taskParameters[i].duration / (double)taskParameters[i].period;
-    //         }
+            if (taskParameters[counter].taskType == PERIODIC_TASK_PRIORITY)
+            {
+                sum += taskParameters[i].duration / (double)taskParameters[i].period;
+            }
 
-    //         counter++;
-    //     }
-    //     // for (i = 0; i < counter; i++)
-    //     // {
-    //     //     print_string(taskParameters[i].taskName);
-    //     //     print_string("-");
-    //     //     print_string(taskParameters[i].taskParam);
-    //     //     print_string("-");
-    //     //     print_number(taskParameters[i].period);
-    //     //     print_string("-");
-    //     //     print_number(taskParameters[i].duration);
-    //     //     print_string("\n");
-    //     // }
+            counter++;
+        }
+        // for (i = 0; i < counter; i++)
+        // {
+        //     print_string(taskParameters[i].taskName);
+        //     print_string("-");
+        //     print_string(taskParameters[i].taskParam);
+        //     print_string("-");
+        //     print_number(taskParameters[i].period);
+        //     print_string("-");
+        //     print_number(taskParameters[i].duration);
+        //     print_string("\n");
+        // }
 
-    //     double x = counter * (pow(2, 1 / (double)counter) - 1);
+        // double x = counter * (pow(2, 1 / (double)counter) - 1);
 
-    //     if (sum > x)
-    //     {
-    //         print_string("Batch is not schedulable");
+        // if (sum > x)
+        // {
+        //     print_string("Batch is not schedulable");
 
-    //         for (i = 0; i < counter; i++)
-    //         {
-    //             taskParameters[i].duration = 0;
-    //             taskParameters[i].create = 0;
-    //         }
+        //     for (i = 0; i < counter; i++)
+        //     {
+        //         taskParameters[i].duration = 0;
+        //         taskParameters[i].create = 0;
+        //     }
 
-    //         return;
-    //     }
-    //     for (i = 0; i < counter; i++)
-    //     {
+        //     return;
+        // }
+        for (i = 0; i < counter; i++)
+        {
 
-    //         if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
-    //         {
-    //             if (taskParameters[i].taskFunction == WORD_FUNCTION)
-    //             {
-    //                 // print_string(taskParameters[i].taskName);
-    //                 // print_string(taskParameters[i].taskParam);
-    //                 xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 120, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
-    //             }
-    //             else
-    //             {
-    //                 // print_string(taskParameters[i].taskName);
-    //                 // print_string(taskParameters[i].taskParam);
-    //                 xTaskCreatePeriodic(taskPeriodicNumber, taskParameters[i].taskName, 120, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
-    //             }
-    //             taskParameters[i].create = 0;
-    //             taskParameters[i].duration = 0;
-    //         }
-    //     }
-    // }
+            if (taskParameters[i].taskType == PERIODIC_TASK_PRIORITY)
+            {
+                if (taskParameters[i].taskFunction == WORD_FUNCTION)
+                {
+                    // print_string(taskParameters[i].taskName);
+                    // print_string(taskParameters[i].taskParam);
+                    // print_number(taskParameters[i].arrival);
+                    // print_number(taskParameters[i].period);
+                    // print_number(taskParameters[i].duration);
+                    xTaskCreatePeriodic(taskPeriodic, taskParameters[i].taskName, 120, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                }
+                else
+                {
+                    // print_string(taskParameters[i].taskName);
+                    // print_string(taskParameters[i].taskParam);
+                    // print_number(taskParameters[i].arrival);
+                    // print_number(taskParameters[i].period);
+                    // print_number(taskParameters[i].duration);
+                    xTaskCreatePeriodic(taskPeriodicNumber, taskParameters[i].taskName, 120, taskParameters[i].taskParam, PERIODIC_TASK_PRIORITY, NULL, taskParameters[i].arrival, taskParameters[i].period, taskParameters[i].duration);
+                }
+                taskParameters[i].create = 0;
+                taskParameters[i].duration = 0;
+            }
+        }
+    }
 }
 
 #if (INCLUDE_vTaskDelayUntil == 1)
@@ -2481,7 +2488,7 @@ void vTaskSwitchContext(void)
                 break;
 
             TCB_t *task = listGET_LIST_ITEM_OWNER(tmp);
-            print_string(task->pcName);
+
             if (task->period <= min_period && task->arrival + task->cycle * task->period <= xTaskGetTickCount())
             {
                 min_task = task;
@@ -2489,8 +2496,6 @@ void vTaskSwitchContext(void)
             }
             tmp = listGET_NEXT(tmp);
         }
-            print_string("\n");
-
         List_t *aperiodic_list = &pxReadyTasksLists[APERIODIC_TASK_PRIORITY];
 
         struct xLIST_ITEM *aperiodic = listGET_HEAD_ENTRY(aperiodic_list);
