@@ -1,3 +1,10 @@
+## Free-RTOS-Sporadic-Server
+
+FreeRTOS modification that works with periodic and aperiodic tasks, based on Rate Monotonic (RM) algorithm and Sporadic Server (SS).
+It accepts parameters for server configuration and tasks via serial port and makes them based on input.
+I also made a JAVA SWING GUI application that interacts with the microcontroller running this operating sistem, you can see it here: https://github.com/Gostuski/Free-RTOS-Sporadic-Server-GUI
+
+
 This is a fork of Richard Barry's freeRTOS, optimised for the Arduino AVR devices.
 
 It has been created to provide access to FreeRTOS capabilities, with full compatibility to the Arduino environment.
@@ -77,4 +84,5 @@ Testing with the Software Serial library shows some incompatibilities at low bau
 * `heap_3.c` : Contains the heap allocation scheme based on `malloc()`. Other schemes are available, but depend on user configuration for specific MCU choice.
 
 
-# Free-RTOS-Sporadic-Server
+
+
